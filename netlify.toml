@@ -1,0 +1,22 @@
+# Netlify Configuration for Tech Tasks Frontend
+
+[build]
+  command = "cd frontend && npm install && npm run build"
+  publish = "frontend/dist/spa"
+  base = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  API_URL = "https://ch3-1-proxy-server.onrender.com/api"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"

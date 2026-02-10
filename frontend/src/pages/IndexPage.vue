@@ -28,6 +28,45 @@
         </q-banner>
       </div>
 
+      <!-- Create Task Form -->
+      <q-card flat bordered class="q-mb-lg">
+        <q-card-section>
+          <div class="text-h6 q-mb-md">เพิ่มชื่องานใหม่</div>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="newTask.title"
+                label="ชื่องาน *"
+                outlined
+                dense
+                :disable="creating"
+                @keyup.enter="createTask"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                v-model="newTask.description"
+                label="รายละเอียด"
+                outlined
+                dense
+                :disable="creating"
+                @keyup.enter="createTask"
+              />
+            </div>
+            <div class="col-12">
+              <q-btn
+                label="เพิ่มงาน"
+                color="primary"
+                icon="add"
+                @click="createTask"
+                :loading="creating"
+                :disable="!newTask.title"
+              />
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
       <div class="row q-col-gutter-md">
         <div v-if="loading" class="col-12 flex justify-center q-pa-xl">
           <q-spinner-dots color="primary" size="3em" />
@@ -86,11 +125,61 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { api } from 'boot/axios';
+import { useQuasar } from 'quasar';
 
+const $q = useQuasar();
 const tasks = ref([]);
 const loading = ref(false);
+const creating = ref(false);
 const errorMessage = ref('');
+const successMessage = ref('');
 const loadingErrorUrl = ref('');
+const newTask = ref({
+  title: '',
+  description: '',
+});
+
+const createTask = async () => {
+  if (!newTask.value.title.trim()) {
+    $q.notify({
+      type: 'negative',
+      message: 'กรุณาระบุชื่องาน',
+      position: 'top',
+    });
+    return;
+  }
+
+  creating.value = true;
+  errorMessage.value = '';
+
+  try {
+    const res = await api.post('/tasks', {
+      title: newTask.value.title.trim(),
+      description: newTask.value.description.trim(),
+    });
+
+    if (res.status === 201) {
+      $q.notify({
+        type: 'positive',
+        message: 'เพิ่มงานสำเร็จ',
+        position: 'top',
+      });
+      newTask.value = { title: '', description: '' };
+      await fetchTasks();
+    }
+  } catch (err) {
+    console.error('Create Task Error:', err);
+    const status = err.response ? err.response.status : 'Network Error';
+    const message = err.response?.data?.message || 'ไม่สามารถเพิ่มงานได้';
+    $q.notify({
+      type: 'negative',
+      message: message,
+      position: 'top',
+    });
+  } finally {
+    creating.value = false;
+  }
+};
 
 const fetchTasks = async () => {
   loading.value = true;
